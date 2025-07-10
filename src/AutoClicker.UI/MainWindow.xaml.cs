@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using AutoClicker.Core.Services;
+using AutoClicker.UI.ViewModels;
 
 namespace AutoClicker.UI;
 
@@ -19,5 +21,14 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        
+        // Initialize services
+        var clickService = new ClickService();
+        var hotkeyService = new HotkeyService();
+        var timerService = new TimerService();
+        var configurationService = new ConfigurationService();
+        
+        // Set DataContext
+        DataContext = new MainViewModel(clickService, hotkeyService, timerService, configurationService);
     }
 }

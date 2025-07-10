@@ -5,38 +5,81 @@ using AutoClicker.Core.Models;
 namespace AutoClicker.Core.Services;
 
 /// <summary>
-/// Service for loading and saving application configuration
+/// Service for managing application configuration
 /// </summary>
 public class ConfigurationService : IConfigurationService
 {
-    private readonly string _configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AutoClicker", "config.json");
+    private readonly string _configPath;
+    private AppConfiguration _configuration;
+
+    public ConfigurationService()
+    {
+        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var autoClickerPath = Path.Combine(appDataPath, "AutoClicker");
+        Directory.CreateDirectory(autoClickerPath);
+        
+        _configPath = Path.Combine(autoClickerPath, "config.json");
+        _configuration = new AppConfiguration();
+    }
 
     public async Task<AppConfiguration> LoadConfigurationAsync()
     {
-        // TODO: Implement configuration loading from JSON file
-        throw new NotImplementedException();
+        try
+        {
+            if (File.Exists(_configPath))
+            {
+                var json = await File.ReadAllTextAsync(_configPath);
+                _configuration = JsonSerializer.Deserialize<AppConfiguration>(json) ?? new AppConfiguration();
+            }
+        }
+        catch
+        {
+            _configuration = new AppConfiguration();
+        }
+        
+        return _configuration;
     }
 
     public async Task SaveConfigurationAsync(AppConfiguration configuration)
     {
-        // TODO: Implement configuration saving to JSON file
-        throw new NotImplementedException();
+        _configuration = configuration;
+        var json = JsonSerializer.Serialize(configuration, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(_configPath, json);
+    }
+
+    public void SaveSequence(ClickSequence sequence)
+    {
+        var existingIndex = _configuration.SavedSequences.FindIndex(s => s.Name == sequence.Name);
+        if (existingIndex >= 0)
+        {
+            _configuration.SavedSequences[existingIndex] = sequence;
+        }
+        else
+        {
+            _configuration.SavedSequences.Add(sequence);
+        }
+    }
+
+    public List<ClickSequence> GetSavedSequences()
+    {
+        return _configuration.SavedSequences.ToList();
     }
 
     public AppConfiguration GetDefaultConfiguration()
     {
         return new AppConfiguration
         {
-            Sequences = new List<ClickSequence>(),
-            Keybindings = new Dictionary<string, string>
+            Keybindings = new Keybindings
             {
-                { "record", "[" },
-                { "start", "]" },
-                { "stop", "\\" },
-                { "clear", "Delete" }
+                Record = "[",
+                Start = "]",
+                Stop = "\\",
+                Clear = "Delete"
             },
-            TimeOffset = 0,
-            DefaultDelayMs = 50
+            TimeOffsetHours = 0,
+            DefaultDelayMs = 50,
+            UseServerTime = false,
+            SavedSequences = new List<ClickSequence>()
         };
     }
 }

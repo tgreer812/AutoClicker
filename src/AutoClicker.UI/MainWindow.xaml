@@ -5,8 +5,152 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoClicker.UI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="AutoClicker - Tribal Wars Assistant" Height="500" Width="600"
+        MinHeight="400" MinWidth="500">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
+        <!-- Main content area -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="250"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Click positions list -->
+            <GroupBox Grid.Column="0" Header="Click Positions" Margin="0,0,5,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <ListBox Grid.Row="0" ItemsSource="{Binding Positions}" 
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="LightGray" BorderThickness="0,0,0,1" Padding="5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0}: ({1}, {2})">
+                                                    <Binding Path="Label"/>
+                                                    <Binding Path="X"/>
+                                                    <Binding Path="Y"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                        <Button Grid.Column="1" Content="Remove" Padding="5,2"
+                                                Command="{Binding DataContext.RemovePositionCommand, 
+                                                          RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    
+                    <TextBlock Grid.Row="0" Text="No positions recorded" 
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="Gray" FontStyle="Italic">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Positions.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    
+                    <Button Grid.Row="1" Content="Record Position (Press '[' key)" 
+                            Margin="0,5,0,0" Padding="5"
+                            Command="{Binding RecordPositionCommand}"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- Settings panel -->
+            <GroupBox Grid.Column="1" Header="Settings" Margin="5,0,0,0">
+                <StackPanel Margin="5">
+                    <Label Content="Delay between clicks:"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding DelayMilliseconds}" 
+                                 VerticalAlignment="Center"/>
+                        <Label Grid.Column="1" Content="ms"/>
+                    </Grid>
+                    
+                    <CheckBox Content="Loop sequence" Margin="0,10,0,0"
+                              IsChecked="{Binding IsLooping}"/>
+                    
+                    <Separator Margin="0,10"/>
+                    
+                    <Label Content="Status:" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" 
+                               Foreground="DarkGreen" Margin="5,0"/>
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+
+        <!-- Control buttons -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
+            <Button Content="Start Sequence" Width="120" Margin="5" Padding="5"
+                    Command="{Binding StartSequenceCommand}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            
+            <Button Content="Stop" Width="80" Margin="5" Padding="5"
+                    Command="{Binding StopSequenceCommand}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRunning}" Value="False">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            
+            <Button Content="Clear All" Width="80" Margin="5" Padding="5"
+                    Command="{Binding ClearPositionsCommand}"/>
+        </StackPanel>
+
+        <!-- Hotkey info -->
+        <Border Grid.Row="2" BorderBrush="LightGray" BorderThickness="1" 
+                Padding="5" Margin="0,5,0,0">
+            <TextBlock TextAlignment="Center" Foreground="Gray">
+                <Run Text="Hotkeys: "/>
+                <Run Text="Record: [" FontWeight="Bold"/>
+                <Run Text=" | "/>
+                <Run Text="Start: ]" FontWeight="Bold"/>
+                <Run Text=" | "/>
+                <Run Text="Stop: \" FontWeight="Bold"/>
+                <Run Text=" | "/>
+                <Run Text="Clear: Delete" FontWeight="Bold"/>
+            </TextBlock>
+        </Border>
     </Grid>
 </Window>
