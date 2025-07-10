@@ -31,23 +31,33 @@ namespace AutoClicker.Core.Services
         {
             try
             {
+                Debug.WriteLine($"Registering hotkey: {key}");
                 var keyCode = ParseKey(key);
                 if (keyCode != Keys.None)
                 {
                     _hotkeyActions[keyCode] = action;
                     _hotkeyMappings[key] = keyCode;
+                    Debug.WriteLine($"Mapped key '{key}' to {keyCode}");
                     
                     // Start the hook if it's not already running
                     if (_hookID == IntPtr.Zero)
                     {
                         StartHook();
+                        if (_hookID == IntPtr.Zero)
+                        {
+                            Debug.WriteLine("Failed to start keyboard hook");
+                            return false;
+                        }
+                        Debug.WriteLine($"Keyboard hook started successfully: {_hookID}");
                     }
                     return true;
                 }
+                Debug.WriteLine($"Failed to parse key: {key}");
                 return false;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Error registering hotkey: {ex.Message}");
                 return false;
             }
         }
@@ -86,6 +96,11 @@ namespace AutoClicker.Core.Services
         private void StartHook()
         {
             _hookID = SetHook(_proc);
+            if (_hookID == IntPtr.Zero)
+            {
+                var error = Marshal.GetLastWin32Error();
+                Debug.WriteLine($"Failed to set hook. Error code: {error}");
+            }
         }
 
         private void StopHook()
@@ -100,10 +115,29 @@ namespace AutoClicker.Core.Services
         private IntPtr SetHook(LowLevelKeyboardProc proc)
         {
             using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
+            using (ProcessModule? curModule = curProcess.MainModule)
             {
-                return SetWindowsHookEx(WH_KEYBOARD_LL, proc,
-                    GetModuleHandle(curModule.ModuleName), 0);
+                IntPtr handle = IntPtr.Zero;
+                
+                if (curModule != null)
+                {
+                    handle = GetModuleHandle(curModule.ModuleName);
+                }
+                
+                if (handle == IntPtr.Zero)
+                {
+                    // Try alternative method - pass null for current process
+                    handle = Marshal.GetHINSTANCE(typeof(HotkeyService).Module);
+                }
+                
+                var hookId = SetWindowsHookEx(WH_KEYBOARD_LL, proc, handle, 0);
+                if (hookId == IntPtr.Zero)
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    Debug.WriteLine($"SetWindowsHookEx failed with error: {error}");
+                }
+                
+                return hookId;
             }
         }
 
@@ -114,9 +148,20 @@ namespace AutoClicker.Core.Services
                 int vkCode = Marshal.ReadInt32(lParam);
                 Keys key = (Keys)vkCode;
                 
+                Debug.WriteLine($"Key pressed: {key} (vkCode: {vkCode})");
+                
                 if (_hotkeyActions.TryGetValue(key, out var action))
                 {
-                    action?.Invoke();
+                    Debug.WriteLine($"Executing action for key: {key}");
+                    try
+                    {
+                        // Execute the action directly - let the UI layer handle threading
+                        action?.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error executing hotkey action: {ex.Message}");
+                    }
                 }
             }
 
@@ -187,3 +232,4 @@ namespace AutoClicker.Core.Services
         private static extern IntPtr GetModuleHandle(string lpModuleName);
     }
 }
+

@@ -18,17 +18,9 @@ namespace AutoClicker.UI;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    public MainWindow(MainWindowViewModel viewModel)
     {
         InitializeComponent();
-        
-        // Initialize services
-        var clickService = new ClickService();
-        var hotkeyService = new HotkeyService();
-        var timerService = new TimerService();
-        var configurationService = new ConfigurationService();
-        
-        // Set DataContext
-        DataContext = new MainViewModel(clickService, hotkeyService, timerService, configurationService);
+        DataContext = viewModel;
     }
 }

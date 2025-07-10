@@ -4,6 +4,9 @@ using AutoClicker.Core.Models;
 using AutoClicker.Core.Interfaces;
 using AutoClicker.UI.Commands;
 using System.Runtime.InteropServices;
+using System;
+using System.Threading;
+using System.Linq;
 
 namespace AutoClicker.UI.ViewModels;
 
